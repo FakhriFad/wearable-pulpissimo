@@ -1,0 +1,11 @@
+# backup files
+*.bak
+*~
+
+# object files
+*.o
+*.d
+*.elf
+
+# build directory (from pulp's makefile)
+build/
