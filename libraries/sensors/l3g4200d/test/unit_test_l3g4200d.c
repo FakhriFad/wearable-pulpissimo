@@ -4,7 +4,7 @@
  * Verifikasi logika library L3G4200D TANPA hardware.
  * Mock I2C mensimulasikan respons sensor untuk setiap register.
  *
- * Build:  gcc -o unit_test_l3g4200d unit_test_l3g4200d.c -lm
+ * Build:  gcc -o unit_test_l3g4200d unit_test_l3g4200d.c -lm -I.. -Imock
  * Run:    ./unit_test_l3g4200d
  */
 
@@ -97,9 +97,9 @@ int i2c_read(i2c_t *dev, unsigned char *rx_buff, int length, int pending) {
  * ========================================================================= */
 
 /* Include library headers and source (mock/pulp.h is resolved via -Imock) */
-#include "../include/gyro_common.h"
-#include "../include/l3g4200d.h"
-#include "../src/l3g4200d.c"
+#include "../gyro_common.h"
+#include "../l3g4200d.h"
+#include "../l3g4200d.c"
 
 /* =========================================================================
  * TEST FRAMEWORK

@@ -1,7 +1,7 @@
 /*
  * Unit Test: MPU-6050 Library - Mock I2C
  *
- * Build:  gcc -o unit_test_mpu6050 unit_test_mpu6050.c -lm -I../include -Imock
+ * Build:  gcc -o unit_test_mpu6050 unit_test_mpu6050.c -lm -I.. -Imock
  * Run:    ./unit_test_mpu6050
  */
 
@@ -72,9 +72,9 @@ int i2c_read(i2c_t *dev, unsigned char *rx_buff, int length, int pending) {
  * Include library source
  * ========================================================================= */
 
-#include "../include/gyro_common.h"
-#include "../include/mpu6050.h"
-#include "../src/mpu6050.c"
+#include "../gyro_common.h"
+#include "../mpu6050.h"
+#include "../mpu6050.c"
 
 /* =========================================================================
  * TEST FRAMEWORK
