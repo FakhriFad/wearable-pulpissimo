@@ -38,7 +38,14 @@ static max30102_status_t i2c_write_reg(max30102_t *dev, uint8_t reg, uint8_t val
     uint8_t tx_data[2] = {reg, value};
     
     // Write 2 bytes: register address and value. send_stop = 1 (send stop bit)
-    i2c_write((i2c_t *)dev->i2c_dev, tx_data, 2, 1);
+    int ret = i2c_write((i2c_t *)dev->i2c_dev, tx_data, 2, 1);
+    
+    if (ret != 0) {
+        printf("I2C WRITE ERROR (%d)\n", ret);
+        return MAX30102_ERROR_I2C;
+    }
+    
+    printf("[WRITE] Reg 0x%02X <- 0x%02X\n", reg, value);
     
     return MAX30102_OK;
 }
@@ -47,9 +54,21 @@ static max30102_status_t i2c_read_reg(max30102_t *dev, uint8_t reg, uint8_t *val
     if (!dev || !dev->i2c_dev || !value) return MAX30102_ERROR_INVALID_PARAM;
 
     // Write register address without stop (send_stop = 0)
-    i2c_write((i2c_t *)dev->i2c_dev, &reg, 1, 0);
+    int ret = i2c_write((i2c_t *)dev->i2c_dev, &reg, 1, 0);
+    if (ret != 0) {
+        printf("I2C WRITE ERROR (%d)\n", ret);
+        return MAX30102_ERROR_I2C;
+    }
+
     // Read 1 byte and send stop (pending = 0)
-    i2c_read((i2c_t *)dev->i2c_dev, value, 1, 0);
+    ret = i2c_read((i2c_t *)dev->i2c_dev, value, 1, 0);
+    if (ret <= 0) {
+        printf("I2C READ ERROR (%d)\n", ret);
+        return MAX30102_ERROR_I2C;
+    }
+
+    printf("[READ] Reg 0x%02X\n", reg);
+    printf("[READ] Value = 0x%02X\n", *value);
 
     return MAX30102_OK;
 }
@@ -58,9 +77,18 @@ static max30102_status_t i2c_read_regs(max30102_t *dev, uint8_t reg, uint8_t *da
     if (!dev || !dev->i2c_dev || !data || len <= 0) return MAX30102_ERROR_INVALID_PARAM;
 
     // Write register address without stop (send_stop = 0)
-    i2c_write((i2c_t *)dev->i2c_dev, &reg, 1, 0);
+    int ret = i2c_write((i2c_t *)dev->i2c_dev, &reg, 1, 0);
+    if (ret != 0) {
+        printf("I2C WRITE ERROR (%d)\n", ret);
+        return MAX30102_ERROR_I2C;
+    }
+
     // Read len bytes and send stop (pending = 0)
-    i2c_read((i2c_t *)dev->i2c_dev, data, len, 0);
+    ret = i2c_read((i2c_t *)dev->i2c_dev, data, len, 0);
+    if (ret <= 0) {
+        printf("I2C READ ERROR (%d)\n", ret);
+        return MAX30102_ERROR_I2C;
+    }
 
     return MAX30102_OK;
 }
@@ -78,25 +106,37 @@ max30102_status_t max30102_init(max30102_t *dev, int i2c_port) {
     i2c_dev_t conf;
     i2c_dev_init(&conf);
     conf.id = i2c_port;
-    conf.cs = dev->i2c_addr;
-    conf.max_baudrate = 100000;;
+    conf.cs = dev->i2c_addr << 1;
+    conf.max_baudrate = 100000;
+    
+    printf("[INIT] Opening I2C...\n");
+    printf("I2C Port : %d\n", conf.id);
+    printf("Address  : 0x%02X\n", conf.cs);
+    printf("Baudrate : %d\n", conf.max_baudrate);
     
     dev->i2c_dev = (void *)i2c_open(&conf);
     if (!dev->i2c_dev) {
         printf("ERROR: Failed to open I2C port %d\n", i2c_port);
         return MAX30102_ERROR_I2C;
     }
+    printf("OK\n\n");
     
     // Check Part ID to verify connection
+    printf("[INIT] Reading Part ID...\n");
     uint8_t part_id = 0;
     if (max30102_get_part_id(dev, &part_id) != MAX30102_OK || part_id != MAX30102_EXPECTED_PART_ID) {
+        printf("FAIL\n");
         printf("ERROR: MAX30102 not found! Expected Part ID: 0x%02X, Got: 0x%02X\n", MAX30102_EXPECTED_PART_ID, part_id);
         return MAX30102_ERROR_NOT_FOUND;
     }
+    printf("OK\n\n");
     
     // Soft Reset
+    printf("[INIT] Reset...\n");
     max30102_reset(dev);
+    printf("OK\n\n");
     
+    printf("[INIT] Config FIFO...\n");
     // Set configuration: SpO2 Mode
     i2c_write_reg(dev, MAX30102_REG_MODE_CONFIG, MAX30102_MODE_SPO2);
     
@@ -114,17 +154,21 @@ max30102_status_t max30102_init(max30102_t *dev, int i2c_port) {
     i2c_write_reg(dev, MAX30102_REG_INT_ENABLE_2, 0x00);
     
     max30102_clear_fifo(dev);
+    printf("OK\n\n");
     
     return MAX30102_OK;
 }
 
 max30102_status_t max30102_reset(max30102_t *dev) {
-    i2c_write_reg(dev, MAX30102_REG_MODE_CONFIG, MAX30102_MODE_RESET);
+    max30102_status_t status = i2c_write_reg(dev, MAX30102_REG_MODE_CONFIG, MAX30102_MODE_RESET);
+    if (status != MAX30102_OK) return status;
     
     // Wait for reset bit to clear
     uint8_t mode = MAX30102_MODE_RESET;
     while (mode & MAX30102_MODE_RESET) {
-        i2c_read_reg(dev, MAX30102_REG_MODE_CONFIG, &mode);
+        status = i2c_read_reg(dev, MAX30102_REG_MODE_CONFIG, &mode);
+        if (status != MAX30102_OK) return status;
+        
         // Add a small delay if possible, or busy wait
         for(volatile int i=0; i<10000; i++);
     }
