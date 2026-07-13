@@ -172,8 +172,7 @@ static void on_gesture(const gesture_event_t *event) {
   case GESTURE_SWIPE_LEFT:
     if (g_current_tile < TILE_COUNT - 1) {
       g_current_tile++;
-      home_screen_navigate((home_screen_id_t)g_current_tile,
-                           LV_SCR_LOAD_ANIM_NONE, 0);
+      home_screen_navigate((home_screen_id_t)g_current_tile,LV_SCR_LOAD_ANIM_NONE, 0);
       printf("[APP] Swiped Left -> Screen %d\n", g_current_tile);
     }
     break;
@@ -181,8 +180,7 @@ static void on_gesture(const gesture_event_t *event) {
   case GESTURE_SWIPE_RIGHT:
     if (g_current_tile > 0) {
       g_current_tile--;
-      home_screen_navigate((home_screen_id_t)g_current_tile,
-                           LV_SCR_LOAD_ANIM_NONE, 0);
+      home_screen_navigate((home_screen_id_t)g_current_tile,LV_SCR_LOAD_ANIM_NONE, 0);
       printf("[APP] Swiped Right -> Screen %d\n", g_current_tile);
     }
     break;

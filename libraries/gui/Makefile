@@ -104,7 +104,7 @@ else ifeq ($(PLATFORM), riscv)
 PULP_APP        = gui_app
 PULP_APP_C_SRCS = $(ALL_SRCS) $(RISCV_ONLY_SRCS)
 # For max optimization use -Os -flto (debug -O0 -fno-lto)
-PULP_CFLAGS     = -g -Os -flto -falign-functions=4 -falign-labels=4 -falign-loops=4 -mstrict-align \
+PULP_CFLAGS     = -g -O0 -fno-lto -falign-functions=4 -falign-labels=4 -falign-loops=4 -mstrict-align \
                   $(COMMON_CFLAGS) \
 		          		-DPLATFORM_RISCV \
 									-DDEBUG_BUILD
